@@ -1,7 +1,7 @@
 use directumlabdb;
 
 insert into Customers values
-('Super', 'Manager', 'Иосифович', 'Moscow'),
+('Nagibator', 'Super', '9000', 'Moscow'),
 ('Котов', 'Валерий', 'Эдуардович', 'London')
 
 insert into Sellers values
