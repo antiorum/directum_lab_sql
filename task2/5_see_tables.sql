@@ -6,4 +6,4 @@ select * from Orders
 SELECT * FROM OrdersHistory
 
 select * from SellersInfo
-exec GetOrdersByCity @city = 'London'
+exec GetOrdersByCity @city = 'Moscow'

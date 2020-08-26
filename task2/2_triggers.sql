@@ -1,99 +1,47 @@
 use directumlabdb;
 
 GO
-CREATE TRIGGER orders_check_customer_and_seller
+CREATE TRIGGER OrdersAfterInsert
 ON Orders
-INSTEAD OF INSERT
+AFTER INSERT
 AS
-	DECLARE @id int, @description NVARCHAR(4000), @summ MONEY, @orderDateTime DATETIME2, @customerId INT, @sellerId INT, @customerCity NVARCHAR(200), @sellerCity NVARCHAR(200);
-	DECLARE @CURSOR CURSOR
-	SET @CURSOR = CURSOR SCROLL 
-	FOR 
-	SELECT Id, Description, Summ, OrderDateTime, CustomerId, SellerId FROM INSERTED ORDER BY Id
-	OPEN @CURSOR
-	FETCH NEXT FROM @CURSOR INTO @id, @description, @summ, @orderDateTime, @customerId, @sellerId
-		WHILE @@FETCH_STATUS = 0
-		BEGIN
-			SET @customerCity = (select City from Customers where Id = @customerId)
-			SET @sellerCity = (select City from Sellers where Id = @sellerId)
-				IF @customerCity = @sellerCity
-					BEGIN 
-						INSERT INTO Orders
-						VALUES (@description, @summ , @orderDateTime, @customerId, @sellerId)
-					END;	
-				ELSE
-					PRINT 'CUSTOMER AND CELLER MUST BE FROM SAME CITY'
-			FETCH NEXT FROM @CURSOR INTO @id, @description, @summ, @orderDateTime, @customerId, @sellerId
-		END
-	CLOSE @CURSOR
+	declare @insertedCount int, @sameCityCount int;
+	set @insertedCount = (select count(*) from inserted)
+	set @sameCityCount = (
+		select count(*) from
+			(select
+				i.Id, s.City as SellerCity, c.City as CustomerCity
+				from
+					inserted as i
+				join
+					Sellers as s on i.SellerId = s.Id
+				join
+					Customers as c on i.CustomerId = c.Id) as temp
+				where
+					temp.SellerCity=temp.CustomerCity)
+	if @insertedCount != @sameCityCount
+		begin
+			delete from Orders where Id in (select Id from inserted)
+			RAISERROR('Seller and customer must be from the same city!', 16, 1)
+		end
+	else
+		begin
+			insert into OrdersHistory (OrderId, Operation, OrderDateTime, CustomerId, SellerId)
+			select Id, 'INSERT', OrderDateTime, CustomerId, SellerId from inserted order by Id
+		end
 
 GO
-CREATE PROCEDURE AddOrderHistory
-    @orderId int,
-	@operation nvarchar(20),
-	@orderDateTime datetime2,
-	@customerId int,
-	@sellerId int
-AS
-INSERT INTO OrdersHistory
-VALUES(@orderId, @operation, DEFAULT, @orderDateTime, @customerId, @sellerId)
-
-GO
-CREATE TRIGGER orders_log_insert
-ON Orders
-AFTER INSERT 
-AS
-	DECLARE @orderId INT, @operation NVARCHAR(20), @orderDateTime DATETIME2, @customerId INT, @sellerId INT
-	SET @operation = 'INSERT'
-	DECLARE @CURSOR CURSOR
-	SET @CURSOR = CURSOR SCROLL 
-	FOR 
-	SELECT Id, OrderDateTime, CustomerId, SellerId FROM INSERTED ORDER BY Id
-	OPEN @CURSOR 
-	FETCH NEXT FROM @CURSOR INTO @orderId, @orderDateTime, @customerId, @sellerId
-		WHILE @@FETCH_STATUS = 0
-		BEGIN
-			EXEC AddOrderHistory  @orderId, @operation, @orderDateTime, @customerId, @sellerId
-			FETCH NEXT FROM @CURSOR INTO @orderId, @orderDateTime, @customerId, @sellerId
-		END
-	CLOSE @CURSOR
-
-GO
-CREATE TRIGGER orders_log_delete
+CREATE TRIGGER OrdersAfterDelete
 ON Orders
 AFTER DELETE
 AS
-	DECLARE @orderId INT, @operation NVARCHAR(20), @orderDateTime DATETIME2, @customerId INT, @sellerId INT
-	SET @operation = 'DELETE'
-	DECLARE @CURSOR CURSOR
-	SET @CURSOR = CURSOR SCROLL 
-	FOR 
-	SELECT Id, OrderDateTime, CustomerId, SellerId FROM DELETED ORDER BY Id
-	OPEN @CURSOR 
-	FETCH NEXT FROM @CURSOR INTO @orderId, @orderDateTime, @customerId, @sellerId
-		WHILE @@FETCH_STATUS = 0
-		BEGIN
-			EXEC AddOrderHistory  @orderId, @operation, @orderDateTime, @customerId, @sellerId
-			FETCH NEXT FROM @CURSOR INTO @orderId, @orderDateTime, @customerId, @sellerId
-		END
-	CLOSE @CURSOR
+	insert into OrdersHistory (OrderId, Operation, OrderDateTime, CustomerId, SellerId)
+	select Id, 'DELETE', OrderDateTime, CustomerId, SellerId from deleted
 
 GO
-CREATE TRIGGER orders_log_update
+CREATE TRIGGER OrdersAfterUpdate
 ON Orders
-AFTER UPDATE 
+AFTER UPDATE
 AS
-	DECLARE @orderId INT, @operation NVARCHAR(20), @orderDateTime DATETIME2, @customerId INT, @sellerId INT
-	SET @operation = 'UPDATE'
-	DECLARE @CURSOR CURSOR
-	SET @CURSOR = CURSOR SCROLL 
-	FOR 
-	SELECT Id, OrderDateTime, CustomerId, SellerId FROM INSERTED ORDER BY Id
-	OPEN @CURSOR 
-	FETCH NEXT FROM @CURSOR INTO @orderId, @orderDateTime, @customerId, @sellerId
-		WHILE @@FETCH_STATUS = 0
-		BEGIN
-			EXEC AddOrderHistory  @orderId, @operation, @orderDateTime, @customerId, @sellerId
-			FETCH NEXT FROM @CURSOR INTO @orderId, @orderDateTime, @customerId, @sellerId
-		END
-	CLOSE @CURSOR
+	insert into OrdersHistory (OrderId, Operation, OrderDateTime, CustomerId, SellerId)
+	select Id, 'UPDATE', OrderDateTime, CustomerId, SellerId from inserted
