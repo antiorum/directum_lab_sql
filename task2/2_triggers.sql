@@ -36,7 +36,7 @@ ON Orders
 AFTER DELETE
 AS
 	insert into OrdersHistory (OrderId, Operation, OrderDateTime, CustomerId, SellerId)
-	select Id, 'DELETE', OrderDateTime, CustomerId, SellerId from deleted
+	select Id, 'DELETE', OrderDateTime, CustomerId, SellerId from deleted order by Id
 
 GO
 CREATE TRIGGER OrdersAfterUpdate
@@ -44,4 +44,4 @@ ON Orders
 AFTER UPDATE
 AS
 	insert into OrdersHistory (OrderId, Operation, OrderDateTime, CustomerId, SellerId)
-	select Id, 'UPDATE', OrderDateTime, CustomerId, SellerId from inserted
+	select Id, 'UPDATE', OrderDateTime, CustomerId, SellerId from inserted order by Id
