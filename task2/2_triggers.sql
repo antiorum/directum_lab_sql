@@ -21,7 +21,8 @@ AS
 					temp.SellerCity=temp.CustomerCity)
 	if @insertedCount != @sameCityCount
 		begin
-			delete from Orders where Id in (select Id from inserted)
+			delete from Orders where Id in (select Id from inserted) -- or :
+			-- rollback transaction
 			RAISERROR('Seller and customer must be from the same city!', 16, 1)
 		end
 	else
