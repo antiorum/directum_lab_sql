@@ -47,8 +47,8 @@ order by
 	TotalProductSales desc
 
 --6
-select count(OrdersCount) as OrdersCount, sum(OrdersSumm) as OrdersSumm, Diapason from
-	(select count(SalesOrderId) as OrdersCount, sum(TotalDue) as OrdersSumm,
+select count(SalesOrderID) as OrdersCount, sum(TotalDue) as OrdersSumm, Diapason from
+	(select SalesOrderId, TotalDue,
 		CASE
 	        WHEN TotalDue between 0 and 99 THEN '0...99'
 			WHEN TotalDue between 100 and 999 THEN '100...999'
@@ -57,7 +57,7 @@ select count(OrdersCount) as OrdersCount, sum(OrdersSumm) as OrdersSumm, Diapaso
 			else 'unknown diapason'
 	    END AS Diapason
 	from SalesLT.SalesOrderHeader
-	group by TotalDue) as tmp
+	group by SalesOrderId, TotalDue) as tmp
 group by Diapason
 
 --7
