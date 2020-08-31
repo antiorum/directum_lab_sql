@@ -7,5 +7,3 @@ onum int not null)
 
 --2
 alter table dbo.Documents add dnum integer not null
-
---3 ?

@@ -34,10 +34,10 @@ join SalesLT.SalesOrderHeader as soh
 join SalesLT.SalesOrderDetail as sod 
 	on soh.SalesOrderID = sod.SalesOrderID
 join SalesLT.Product as p
-	on p.Name like 'Racing Socks%' and p.ProductID = sod.ProductID
+	on p.Name like '%Racing Socks%' and p.ProductID = sod.ProductID
 
 --5
-select top 25 sod.ProductId, p.Name as ProductName, sum(sod.OrderQty * p.ListPrice) as TotalProductSales
+select top 25 sod.ProductId, p.Name as ProductName, sum(sod.OrderQty * sod.UnitPrice * (1 - sod.UnitPriceDiscount)) as TotalProductSales
 	from SalesLT.SalesOrderDetail as sod
 join SalesLT.Product as p
 	on p.ProductID = sod.ProductID
@@ -47,7 +47,7 @@ order by
 	TotalProductSales desc
 
 --6
-select count(SalesOrderID) as OrdersCount, sum(TotalDue) as OrdersSumm, Diapason from
+select count(SalesOrderID) as OrdersCount, sum(TotalDue) as OrdersSumm, Range from
 	(select SalesOrderId, TotalDue,
 		CASE
 	        WHEN TotalDue between 0 and 99 THEN '0...99'
@@ -55,10 +55,10 @@ select count(SalesOrderID) as OrdersCount, sum(TotalDue) as OrdersSumm, Diapason
 			WHEN TotalDue between 1000 and 9999 THEN '1000...9999'
 			WHEN TotalDue > 9999 THEN '10000 and more'
 			else 'unknown diapason'
-	    END AS Diapason
+	    END AS Range
 	from SalesLT.SalesOrderHeader
 	group by SalesOrderId, TotalDue) as tmp
-group by Diapason
+group by Range
 
 --7
 select CompanyName
