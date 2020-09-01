@@ -194,10 +194,4 @@ select cnum, grouping(cnum), onum, grouping(Onum), sum(amt)
 	having sum(amt) > 150 
 		order by cnum
 
---7
-select cnum, onum, amt
-	from Orders 
-	where cnum < 2005
-	order by cnum, onum
-		compute sum(amt) by cnum -- уже не работает)
 

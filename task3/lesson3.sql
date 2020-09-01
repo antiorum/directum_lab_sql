@@ -21,12 +21,15 @@ DBCC SHRINKFILE (STUDYTrace, 8);
 
 --4
 select * from sys.all_objects
+select * from sys.all_views
 
 --5
 select * from INFORMATION_SCHEMA.VIEWS
-select * from INFORMATION_SCHEMA.SCHEMATA -- и там вообще много всего
+select * from INFORMATION_SCHEMA.SCHEMATA 
 
 --6
 execute sp_help
 execute sp_helpdb
-execute sp_helpindex N'sys.all_columns'
+
+use Chep_LabstudyNew
+execute sp_helpindex N'dbo.orders'
